@@ -17,7 +17,7 @@ fn main() {
 fn part1(data: &str) -> u64 {
     let re = Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)").unwrap();
 
-    re.captures_iter(&data)
+    re.captures_iter(data)
         .map(|c| c[1].parse::<u64>().unwrap() * c[2].parse::<u64>().unwrap())
         .sum::<u64>()
 }
@@ -27,7 +27,7 @@ fn part2(data: &str) -> u64 {
 
     let mut sum = true;
     let mut result = vec![];
-    for cap in re.captures_iter(&data) {
+    for cap in re.captures_iter(data) {
         match &cap[0] {
             "do()" => sum = true,
             "don't()" => sum = false,

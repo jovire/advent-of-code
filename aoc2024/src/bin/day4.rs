@@ -67,8 +67,6 @@ fn part2(data: &str) -> u32 {
     let grid = parse_input(data);
     let mut count = 0;
 
-    dbg!(grid.clone());
-
     for x in 1..grid.len() {
         'vertical: for y in 1..grid[0].len() {
             if grid[x][y] != 'A' {
@@ -101,8 +99,7 @@ fn part2(data: &str) -> u32 {
                     {
                         count += 1;
                         continue 'vertical; // Found a valid X, can move on to next 'A'
-                    }
-                    if (grid[x1][y1] == 'M'
+                    } else if (grid[x1][y1] == 'M'
                         && grid[x1][y2] == 'S'
                         && grid[x2][y1] == 'M'
                         && grid[x2][y2] == 'S')
