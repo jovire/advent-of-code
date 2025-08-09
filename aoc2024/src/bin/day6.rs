@@ -1,6 +1,9 @@
 /*
  * Part1: Determine the number of unique positions the guard passes through before leaving the map.
  *  The guard follows one direction until it reaches an obstacle then turns right and continues.
+ *
+ * Part2: How many distinct positions can an obstacle be placed in the map that would cause the
+ * guard to be stuck in a loop?
  */
 
 use std::collections::HashSet;
@@ -37,6 +40,10 @@ impl Grid {
         } else {
             None
         }
+    }
+
+    fn set(&mut self, index: &Point, c: char) {
+        self.data[index.x as usize][index.y as usize] = c
     }
 }
 
@@ -96,7 +103,7 @@ impl std::ops::Add<Direction> for Point {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Direction {
     North,
     South,
@@ -119,11 +126,49 @@ fn main() {
     let data = std::fs::read_to_string("./data/6.example").expect("couldn't open the file");
     let part1 = part1(&data);
     println!("Part1: {part1}");
+    let part2 = part2(&data);
+    println!("Part2: {part2}");
 }
 
 fn part1(data: &str) -> usize {
     let grid = Grid::new(data);
 
+    get_visited(&grid, false).unwrap().len()
+}
+
+// Damn this is really slow. 20+ seconds!
+fn part2(data: &str) -> usize {
+    let grid = Grid::new(data);
+
+    // Grab visited points
+    let visited = get_visited(&grid, false).unwrap();
+
+    // Get all possible positions
+    let mut product = vec![];
+    for i in 0..grid.width {
+        for j in 0..grid.height {
+            product.push((i, j));
+        }
+    }
+
+    // For each possible position, if it is a wall, check if there is a loop
+    // If there is a loop, filter that as possible position, then count it
+    product
+        .iter()
+        .filter(|&(x, y)| {
+            let p = Point::new(*x, *y);
+            if visited.get(&p) == Some(&p) {
+                let mut new_grid = grid.clone();
+                new_grid.set(&p, '#');
+                get_visited(&new_grid, true).is_none()
+            } else {
+                false
+            }
+        })
+        .count()
+}
+
+fn get_visited(grid: &Grid, check_loop: bool) -> Option<HashSet<Point>> {
     let mut start = Point { x: 0, y: 0 };
 
     for x in 0..grid.width {
@@ -140,6 +185,7 @@ fn part1(data: &str) -> usize {
 
     let mut next_position = start + direction;
     let mut visited: HashSet<Point> = std::collections::HashSet::new();
+    let mut seen: HashSet<(Point, Direction)> = std::collections::HashSet::new();
 
     while grid.get(&current_position).is_some() {
         visited.insert(current_position);
@@ -151,10 +197,17 @@ fn part1(data: &str) -> usize {
         } else {
             current_position = next_position;
         }
+        if check_loop {
+            // If we have seen the same position and going the same direction, we are in a loop
+            if seen.contains(&(current_position, direction)) {
+                return None;
+            }
+            seen.insert((current_position, direction));
+        }
         next_position = current_position + direction;
     }
 
-    visited.len()
+    Some(visited)
 }
 
 #[cfg(test)]
@@ -176,5 +229,22 @@ mod tests {
 
         let result = part1(data);
         assert_eq!(result, 41);
+    }
+
+    #[test]
+    fn part2_example() {
+        let data = r"....#.....
+.........#
+..........
+..#.......
+.......#..
+..........
+.#..^.....
+........#.
+#.........
+......#...";
+
+        let result = part2(data);
+        assert_eq!(result, 6);
     }
 }
